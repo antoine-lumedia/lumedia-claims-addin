@@ -120,10 +120,10 @@ function showError(msg) {
 
 async function readNamedCell(name) {
   return Excel.run(async ctx => {
-    const named = ctx.workbook.names.getItem(name);
-    named.load('value');
+    const range = ctx.workbook.names.getItem(name).getRange();
+    range.load('values');
     await ctx.sync();
-    return named.value;
+    return range.values[0][0];
   });
 }
 
