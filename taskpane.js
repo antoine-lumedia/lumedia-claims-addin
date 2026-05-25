@@ -168,10 +168,20 @@ async function scanPendingMigrations() {
     range.load(['values']);
     await ctx.sync();
 
+    // Column positions per the new tracker schema (2026-05-25 rebuild):
+    // Both SOA and OT pipeline sheets share these positions for the columns
+    // the add-in scans:
+    //   A (0) status_action   — dropdown
+    //   B (1) row_key
+    //   C (2) block_reason
+    //   D (3) customer
+    //   E (4) contract_no
+    //   F (5) message_id
+    //   G (6) action_name
     const STATUS_COL = 0;
-    const BLOCK_REASON_COL = 1;
+    const BLOCK_REASON_COL = 2;
     const CONTRACT_COL = 4;
-    const ACTION_COL = 5;
+    const ACTION_COL = 6;
 
     const values = range.values || [];
     const pipeline = sheetName.startsWith('SOA_') ? 'SOA' : 'OT';
