@@ -34,44 +34,48 @@
 'use strict';
 
 // ---------- Status-action → target-sheet mapping ----------
+// Must match the dropdown values defined in the workbook's data validation.
+// Convention: "→ Xxx" = forward migration to Xxx; "← Xxx" = back to Xxx.
 const ACTION_MAP = {
   'SOA_Received': {
-    'Send to brand': 'SOA_Claimed',
-    'Mark stuck': 'SOA_Stuck',
+    '→ Claimed': 'SOA_Claimed',
+    '→ Stuck': 'SOA_Stuck',
   },
   'SOA_Claimed': {
-    'Credit note received': 'SOA_Creditable',
-    'Mark stuck': 'SOA_Stuck',
-    'Send back to Received': 'SOA_Received',
+    '→ Creditable': 'SOA_Creditable',
+    '→ Stuck': 'SOA_Stuck',
+    '← Received': 'SOA_Received',
   },
   'SOA_Creditable': {
-    'Done (CN issued in ERP)': 'SOA_Done',
-    'Mark stuck': 'SOA_Stuck',
-    'Send back to Claimed': 'SOA_Claimed',
+    '→ Done': 'SOA_Done',
+    '→ Stuck': 'SOA_Stuck',
+    '← Claimed': 'SOA_Claimed',
   },
   'SOA_Stuck': {
-    'Resume to Received': 'SOA_Received',
-    'Resume to Claimed': 'SOA_Claimed',
-    'Resume to Creditable': 'SOA_Creditable',
+    '→ Received': 'SOA_Received',
+    '→ Claimed': 'SOA_Claimed',
+    '→ Creditable': 'SOA_Creditable',
+    '→ Done': 'SOA_Done',
   },
   'OT_Received': {
-    'Send to brand': 'OT_Claimed',
-    'Mark stuck': 'OT_Stuck',
+    '→ Claimed': 'OT_Claimed',
+    '→ Stuck': 'OT_Stuck',
   },
   'OT_Claimed': {
-    'Credit note received': 'OT_Creditable',
-    'Mark stuck': 'OT_Stuck',
-    'Send back to Received': 'OT_Received',
+    '→ Creditable': 'OT_Creditable',
+    '→ Stuck': 'OT_Stuck',
+    '← Received': 'OT_Received',
   },
   'OT_Creditable': {
-    'Done (CN issued in ERP)': 'OT_Done',
-    'Mark stuck': 'OT_Stuck',
-    'Send back to Claimed': 'OT_Claimed',
+    '→ Done': 'OT_Done',
+    '→ Stuck': 'OT_Stuck',
+    '← Claimed': 'OT_Claimed',
   },
   'OT_Stuck': {
-    'Resume to Received': 'OT_Received',
-    'Resume to Claimed': 'OT_Claimed',
-    'Resume to Creditable': 'OT_Creditable',
+    '→ Received': 'OT_Received',
+    '→ Claimed': 'OT_Claimed',
+    '→ Creditable': 'OT_Creditable',
+    '→ Done': 'OT_Done',
   },
 };
 
