@@ -127,6 +127,50 @@ async function readNamedCell(name) {
   });
 }
 
+// ---------- Self-healing data validation ----------
+// Excel stores data validation as a fixed cell-range sqref, not as a table-
+// column property. Graph has no API to write data validation. Office.js does.
+// So we re-apply dropdowns from the add-in itself, every time the user opens
+// the taskpane or clicks "Check pending changes". The file doesn't need to
+// carry validation — the add-in is the source of truth.
+//
+// `ctx` is an existing Excel.RequestContext (saves a round-trip vs Excel.run).
+// Caller is responsible for ctx.sync() afterwards.
+function ensureStatusActionValidation(ctx, sheetName) {
+  const actionsForSheet = ACTION_MAP[sheetName];
+  if (!actionsForSheet) return;  // not a pipeline sheet, or terminal (_Done)
+  const options = Object.keys(actionsForSheet);
+  if (options.length === 0) return;
+
+  const tableName = TABLE_NAME_FOR[sheetName];
+  if (!tableName) return;
+  const sheet = ctx.workbook.worksheets.getItem(sheetName);
+  const table = sheet.tables.getItem(tableName);
+  const body = table.getDataBodyRange();
+
+  // First column of the data body (status_action). Office.js: getColumn(0)
+  // is relative to the range — gives us column A's portion of the body.
+  const statusCol = body.getColumn(0);
+
+  // Clear any existing rule, then apply ours. Clearing first ensures a stale
+  // half-orphaned rule doesn't merge weirdly with the new one.
+  statusCol.dataValidation.clear();
+  statusCol.dataValidation.rule = {
+    list: {
+      inCellDropDown: true,
+      // Office.js wants the source as a comma-separated string in formula form
+      source: options.join(','),
+    },
+  };
+  statusCol.dataValidation.errorAlert = {
+    showAlert: false,
+    style: 'Warning',
+    title: '',
+    message: '',
+  };
+  statusCol.dataValidation.ignoreBlanks = true;
+}
+
 async function getCurrentUserEmail() {
   // Excel context doesn't reliably expose user email. Returning empty string
   // means the audit log will record actor='unknown'. Phase 2: prompt user
@@ -166,6 +210,11 @@ async function scanPendingMigrations() {
     if (!tableName || !ACTION_MAP[sheetName]) {
       throw new Error(`Active sheet "${sheetName}" is not a pipeline sheet. Switch to one of: ${Object.keys(ACTION_MAP).join(', ')}.`);
     }
+
+    // Self-heal the status_action dropdown before scanning. Idempotent and
+    // silent — runs every time so manual clears, full-row deletes, or template
+    // rebuilds all get repaired automatically.
+    ensureStatusActionValidation(ctx, sheetName);
 
     const table = sheet.tables.getItem(tableName);
     const range = table.getDataBodyRange();
@@ -407,6 +456,23 @@ async function applyMigrations() {
       li.classList.add('err');
       li.textContent = `Warning: could not clear dropdowns (${e.message}). Clear manually.`;
       progress.appendChild(li);
+    }
+
+    // Refresh dropdown validation on target sheets — rows just landed there
+    // via Graph and need their dropdowns ensured for next time someone visits.
+    const targetSheets = new Set(
+      pendingState.pending
+        .filter(p => succeeded.includes(p.contract_no))
+        .map(p => p.target_sheet),
+    );
+    try {
+      await Excel.run(async ctx => {
+        for (const s of targetSheets) ensureStatusActionValidation(ctx, s);
+        await ctx.sync();
+      });
+    } catch (e) {
+      // Non-fatal — next time the user opens that sheet's taskpane scan, it'll heal.
+      console.warn('Target-sheet dropdown refresh failed:', e);
     }
   }
 
