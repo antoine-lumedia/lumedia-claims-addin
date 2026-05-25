@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Claims Migration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <link rel="stylesheet" href="taskpane.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Claims Migration</h1>
+      <p class="subtitle">Apply pending status changes on the active sheet.</p>
+    </header>
+
+    <section id="state-idle">
+      <button id="refresh-btn" class="primary">Check pending changes</button>
+      <p id="hint" class="muted">Set the <code>status_action</code> dropdown on any row, then click above.</p>
+    </section>
+
+    <section id="state-pending" hidden>
+      <p class="context">
+        <strong id="active-sheet"></strong> &middot; pipeline <strong id="active-pipeline"></strong>
+      </p>
+      <div id="pending-list"></div>
+
+      <label for="global-comment" class="block-label">Optional comment (applies to all non-Stuck migrations)</label>
+      <textarea id="global-comment" rows="2" placeholder="e.g. routine batch send"></textarea>
+
+      <div class="actions">
+        <button id="cancel-btn">Cancel</button>
+        <button id="apply-btn" class="primary" disabled>Apply</button>
+      </div>
+    </section>
+
+    <section id="state-running" hidden>
+      <p>Applying migrations…</p>
+      <div class="spinner"></div>
+      <ul id="progress"></ul>
+    </section>
+
+    <section id="state-result" hidden>
+      <div id="result-content"></div>
+      <button id="done-btn" class="primary">Done</button>
+    </section>
+
+    <section id="state-error" hidden>
+      <h2>Something went wrong</h2>
+      <pre id="error-content"></pre>
+      <div class="actions">
+        <button id="error-retry-btn">Retry</button>
+        <button id="error-back-btn" class="primary">Back</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>
